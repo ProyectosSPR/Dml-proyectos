@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Trabajos de Impresión - Sistema de Impresión HTTP{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="display-5 text-primary">
+                    <i class="fas fa-list me-2"></i>Trabajos de Impresión
+                </h1>
+                <p class="lead text-muted">Gestiona y monitorea todos los trabajos de impresión</p>
+            </div>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+            </a>
+        </div>
+
+        <!-- Filters -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">Filtrar por Estado</label>
+                        <select class="form-select" name="status" id="status">
+                            <option value="">Todos los estados</option>
+                            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pendiente</option>
+                            <option value="printing" {% if status_filter == 'printing' %}selected{% endif %}>Imprimiendo</option>
+                            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completado</option>
+                            <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Fallido</option>
+                            <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-filter me-2"></i>Filtrar
+                        </button>
+                        <a href="{{ url_for('jobs') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Limpiar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Jobs Table -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-table me-2"></i>Lista de Trabajos
+                    <span class="badge bg-light text-dark ms-2">{{ jobs.total }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if jobs.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Contenido</th>
+                                    <th>Impresora</th>
+                                    <th>Estado</th>
+                                    <th>Prioridad</th>
+                                    <th>Copias</th>
+                                    <th>Fecha Creación</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in jobs.items %}
+                                    <tr>
+                                        <td>
+                                            <code class="small">{{ job.id }}</code>
+                                        </td>
+                                        <td>
+                                            <span class="text-truncate d-inline-block" style="max-width: 200px;" 
+                                                  title="{{ job.filename }}">
+                                                {{ job.filename[:50] }}{% if job.filename|length > 50 %}...{% endif %}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if job.printer %}
+                                                <i class="fas fa-print text-primary me-1"></i>
+                                                {{ job.printer.name }}
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if job.status == 'pending' %}
+                                                <span class="badge bg-warning">Pendiente</span>
+                                            {% elif job.status == 'printing' %}
+                                                <span class="badge bg-info">Imprimiendo</span>
+                                            {% elif job.status == 'completed' %}
+                                                <span class="badge bg-success">Completado</span>
+                                            {% elif job.status == 'failed' %}
+                                                <span class="badge bg-danger">Fallido</span>
+                                            {% elif job.status == 'cancelled' %}
+                                                <span class="badge bg-secondary">Cancelado</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if job.priority == 1 %}
+                                                <span class="badge bg-secondary">Baja</span>
+                                            {% elif job.priority == 2 %}
+                                                <span class="badge bg-primary">Normal</span>
+                                            {% elif job.priority == 3 %}
+                                                <span class="badge bg-warning">Alta</span>
+                                            {% elif job.priority == 4 %}
+                                                <span class="badge bg-danger">Urgente</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ job.copies }}</span>
+                                        </td>
+                                        <td>
+                                            <small>{{ job.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('api_job_status', job_id=job.id) }}" 
+                                                   class="btn btn-sm btn-outline-primary" title="Ver detalles">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                {% if job.status in ['pending', 'printing'] %}
+                                                    <button class="btn btn-sm btn-outline-danger" 
+                                                            onclick="cancelJob('{{ job.id }}')" title="Cancelar">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                {% endif %}
+                                                {% if job.status == 'failed' %}
+                                                    <button class="btn btn-sm btn-outline-warning" 
+                                                            onclick="retryJob('{{ job.id }}')" title="Reintentar">
+                                                        <i class="fas fa-redo"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if jobs.pages > 1 %}
+                        <nav aria-label="Navegación de páginas">
+                            <ul class="pagination justify-content-center">
+                                {% if jobs.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('jobs', page=jobs.prev_num, status=status_filter) }}">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page_num in jobs.iter_pages() %}
+                                    {% if page_num %}
+                                        <li class="page-item {% if page_num == jobs.page %}active{% endif %}">
+                                            <a class="page-link" href="{{ url_for('jobs', page=page_num, status=status_filter) }}">
+                                                {{ page_num }}
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if jobs.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('jobs', page=jobs.next_num, status=status_filter) }}">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay trabajos de impresión</h5>
+                        <p class="text-muted">
+                            {% if status_filter %}
+                                No se encontraron trabajos con el estado "{{ status_filter }}"
+                            {% else %}
+                                Los trabajos de impresión aparecerán aquí cuando se envíen
+                            {% endif %}
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function cancelJob(jobId) {
+    if (confirm('¿Estás seguro de que quieres cancelar este trabajo?')) {
+        fetch(`/api/jobs/${jobId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Trabajo cancelado exitosamente');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error de conexión: ' + error);
+        });
+    }
+}
+
+function retryJob(jobId) {
+    if (confirm('¿Quieres reintentar este trabajo fallido?')) {
+        // Implementar reintento de trabajo
+        alert('Función de reintento en desarrollo');
+    }
+}
+</script>
+{% endblock %} 

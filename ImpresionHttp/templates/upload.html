@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}Subir Archivos - Sistema de Impresión HTTP{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h1 class="display-4 text-primary">
+                <i class="fas fa-upload me-3"></i>Subir Archivos para Imprimir
+            </h1>
+            <p class="lead text-muted">Envía archivos PDF, Word e imágenes para impresión automática</p>
+        </div>
+
+        <!-- File Upload Form -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-upload me-2"></i>Subir Archivo
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="file" class="form-label">Seleccionar Archivo</label>
+                                <input type="file" class="form-control" id="file" name="file" 
+                                       accept=".pdf,.docx,.doc,.txt,.png,.jpg,.jpeg" required>
+                                <div class="form-text">
+                                    Formatos soportados: PDF, DOCX, DOC, TXT, PNG, JPG, JPEG (máx. 50MB)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="printer_name" class="form-label">Impresora</label>
+                                <select class="form-select" id="printer_name" name="printer_name" required>
+                                    <option value="">Selecciona una impresora</option>
+                                    {% for printer in printers %}
+                                        <option value="{{ printer.name }}">{{ printer.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="copies" class="form-label">Copias</label>
+                                <input type="number" class="form-control" id="copies" name="copies" 
+                                       value="1" min="1" max="100">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="priority" class="form-label">Prioridad</label>
+                                <select class="form-select" id="priority" name="priority">
+                                    <option value="1">Baja</option>
+                                    <option value="2" selected>Normal</option>
+                                    <option value="3">Alta</option>
+                                    <option value="4">Urgente</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="submit" class="btn btn-primary w-100" id="submitBtn">
+                                    <i class="fas fa-upload me-2"></i>Enviar para Imprimir
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- File Preview -->
+        <div class="card shadow-sm mb-4" id="filePreview" style="display: none;">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-eye me-2"></i>Vista Previa del Archivo
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="previewContent"></div>
+            </div>
+        </div>
+
+        <!-- Upload Progress -->
+        <div class="card shadow-sm mb-4" id="uploadProgress" style="display: none;">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">
+                    <i class="fas fa-spinner fa-spin me-2"></i>Procesando Archivo
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="progress mb-3">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" style="width: 0%" id="progressBar"></div>
+                </div>
+                <div id="progressText">Preparando archivo...</div>
+            </div>
+        </div>
+
+        <!-- Supported Formats -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Formatos Soportados
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Documentos</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-file-pdf text-danger me-2"></i>PDF - Documentos PDF</li>
+                            <li><i class="fas fa-file-word text-primary me-2"></i>DOCX - Documentos Word</li>
+                            <li><i class="fas fa-file-word text-primary me-2"></i>DOC - Documentos Word (legacy)</li>
+                            <li><i class="fas fa-file-alt text-secondary me-2"></i>TXT - Archivos de texto</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Imágenes</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-file-image text-success me-2"></i>PNG - Imágenes PNG</li>
+                            <li><i class="fas fa-file-image text-success me-2"></i>JPG/JPEG - Imágenes JPEG</li>
+                        </ul>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                Las imágenes se convertirán automáticamente a PDF para impresión
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Uploads -->
+        
+            
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Variables globales
+let currentFile = null;
+let uploadInProgress = false;
+
+// Elementos del DOM
+const fileInput = document.getElementById('file');
+const uploadForm = document.getElementById('uploadForm');
+const filePreview = document.getElementById('filePreview');
+const previewContent = document.getElementById('previewContent');
+const uploadProgress = document.getElementById('uploadProgress');
+const progressBar = document.getElementById('progressBar');
+const progressText = document.getElementById('progressText');
+const submitBtn = document.getElementById('submitBtn');
+
+// Event listeners
+fileInput.addEventListener('change', handleFileSelect);
+uploadForm.addEventListener('submit', handleFormSubmit);
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    currentFile = file;
+    
+    // Validar tamaño (50MB)
+    if (file.size > 50 * 1024 * 1024) {
+        alert('El archivo es demasiado grande. Máximo 50MB.');
+        fileInput.value = '';
+        return;
+    }
+    
+    // Mostrar vista previa
+    showFilePreview(file);
+}
+
+function showFilePreview(file) {
+    const fileType = file.type;
+    const fileName = file.name;
+    const fileSize = formatFileSize(file.size);
+    
+    let previewHTML = `
+        <div class="d-flex align-items-center">
+            <div class="me-3">
+                ${getFileIcon(fileType)}
+            </div>
+            <div>
+                <h6 class="mb-1">${fileName}</h6>
+                <small class="text-muted">${fileSize} • ${fileType || 'Tipo desconocido'}</small>
+            </div>
+        </div>
+    `;
+    
+    // Vista previa específica por tipo
+    if (fileType.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewHTML += `
+                <div class="mt-3">
+                    <img src="${e.target.result}" class="img-fluid rounded" style="max-height: 200px;">
+                </div>
+            `;
+            previewContent.innerHTML = previewHTML;
+            filePreview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        previewContent.innerHTML = previewHTML;
+        filePreview.style.display = 'block';
+    }
+}
+
+function getFileIcon(fileType) {
+    if (fileType.includes('pdf')) {
+        return '<i class="fas fa-file-pdf fa-2x text-danger"></i>';
+    } else if (fileType.includes('word') || fileType.includes('document')) {
+        return '<i class="fas fa-file-word fa-2x text-primary"></i>';
+    } else if (fileType.includes('image')) {
+        return '<i class="fas fa-file-image fa-2x text-success"></i>';
+    } else if (fileType.includes('text')) {
+        return '<i class="fas fa-file-alt fa-2x text-secondary"></i>';
+    } else {
+        return '<i class="fas fa-file fa-2x text-muted"></i>';
+    }
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+async function handleFormSubmit(event) {
+    event.preventDefault();
+    
+    if (!currentFile || uploadInProgress) return;
+    
+    uploadInProgress = true;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+    
+    // Mostrar progreso
+    uploadProgress.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressText.textContent = 'Preparando archivo...';
+    
+    const formData = new FormData(uploadForm);
+    
+    try {
+        // Simular progreso
+        simulateProgress();
+        
+        const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            progressText.textContent = '¡Archivo enviado exitosamente!';
+            progressBar.style.width = '100%';
+            progressBar.className = 'progress-bar bg-success';
+            
+            // Mostrar mensaje de éxito
+            setTimeout(() => {
+                alert(`Archivo enviado exitosamente!\nJob ID: ${result.job_id}`);
+                resetForm();
+            }, 1000);
+        } else {
+            throw new Error(result.error);
+        }
+        
+    } catch (error) {
+        progressText.textContent = `Error: ${error.message}`;
+        progressBar.className = 'progress-bar bg-danger';
+        console.error('Error:', error);
+    } finally {
+        uploadInProgress = false;
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-upload me-2"></i>Enviar para Imprimir';
+    }
+}
+
+function simulateProgress() {
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90;
+        
+        progressBar.style.width = progress + '%';
+        
+        if (progress < 30) {
+            progressText.textContent = 'Validando archivo...';
+        } else if (progress < 60) {
+            progressText.textContent = 'Procesando contenido...';
+        } else if (progress < 90) {
+            progressText.textContent = 'Enviando a la cola de impresión...';
+        }
+        
+        if (progress >= 90) {
+            clearInterval(interval);
+        }
+    }, 200);
+}
+
+function resetForm() {
+    uploadForm.reset();
+    filePreview.style.display = 'none';
+    uploadProgress.style.display = 'none';
+    currentFile = null;
+    progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated';
+    progressBar.style.width = '0%';
+}
+
+// Cargar impresoras disponibles
+async function loadPrinters() {
+    try {
+        const response = await fetch('/api/printers/status');
+        const printers = await response.json();
+        
+        const printerSelect = document.getElementById('printer_name');
+        printerSelect.innerHTML = '<option value="">Selecciona una impresora</option>';
+        
+        printers.forEach(printer => {
+            const option = document.createElement('option');
+            option.value = printer.name;
+            option.textContent = printer.name;
+            printerSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error cargando impresoras:', error);
+    }
+}
+
+// Inicializar página
+document.addEventListener('DOMContentLoaded', function() {
+    loadPrinters();
+});
+</script>
+{% endblock %} 

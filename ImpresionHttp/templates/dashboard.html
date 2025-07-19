@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sistema de Impresión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">Dashboard</h1>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Impresoras</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_printers }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-print fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Trabajos Completados</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_jobs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Trabajos Pendientes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_jobs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Trabajos Fallidos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ failed_jobs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trabajos Recientes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Trabajos Recientes</h6>
+                    <a href="{{ url_for('jobs') }}" class="btn btn-sm btn-primary">Ver Todos</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_jobs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Archivo</th>
+                                    <th>Impresora</th>
+                                    <th>Estado</th>
+                                    <th>Prioridad</th>
+                                    <th>Copias</th>
+                                    <th>Fecha Creación</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in recent_jobs %}
+                                <tr>
+                                    <td><code class="small">{{ job.id }}</code></td>
+                                    <td>
+                                        <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ job.filename }}">
+                                            {{ job.filename[:50] }}{% if job.filename|length > 50 %}...{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ job.printer_name }}</td>
+                                    <td>
+                                        {% if job.status == 'pending' %}
+                                            <span class="badge bg-warning">Pendiente</span>
+                                        {% elif job.status == 'printing' %}
+                                            <span class="badge bg-info">Imprimiendo</span>
+                                        {% elif job.status == 'completed' %}
+                                            <span class="badge bg-success">Completado</span>
+                                        {% elif job.status == 'failed' %}
+                                            <span class="badge bg-danger">Fallido</span>
+                                        {% elif job.status == 'cancelled' %}
+                                            <span class="badge bg-secondary">Cancelado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if job.priority == 1 %}
+                                            <span class="badge bg-secondary">Baja</span>
+                                        {% elif job.priority == 2 %}
+                                            <span class="badge bg-primary">Normal</span>
+                                        {% elif job.priority == 3 %}
+                                            <span class="badge bg-warning">Alta</span>
+                                        {% elif job.priority == 4 %}
+                                            <span class="badge bg-danger">Urgente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="badge bg-info">{{ job.copies }}</span></td>
+                                    <td><small>{{ job.created_at.strftime('%Y-%m-%d %H:%M') }}</small></td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('api_job_status', job_id=job.id) }}" class="btn btn-sm btn-outline-primary" title="Ver detalles">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if job.status in ['pending', 'printing'] %}
+                                                <button class="btn btn-sm btn-outline-danger" onclick="cancelJob('{{ job.id }}')" title="Cancelar">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            {% endif %}
+                                            {% if job.status == 'failed' %}
+                                                <button class="btn btn-sm btn-outline-warning" onclick="retryJob('{{ job.id }}')" title="Reintentar">
+                                                    <i class="fas fa-redo"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No hay trabajos recientes.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Impresoras Activas -->
+    <!-- Sección eliminada: gestión de impresoras no disponible en esta versión -->
+</div>
+
+<script>
+function retryJob(jobId) {
+    if (confirm('¿Reintentar este trabajo?')) {
+        fetch(`/api/retry/${jobId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Trabajo enviado para reintento');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al reintentar trabajo');
+        });
+    }
+}
+</script>
+{% endblock %} 

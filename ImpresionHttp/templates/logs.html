@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Logs - Sistema de Impresión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">Logs de Errores</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Trabajos Fallidos</h6>
+                    <div>
+                        <button class="btn btn-sm btn-warning" onclick="retryAllFailed()">
+                            Reintentar Todos
+                        </button>
+                        <a href="{{ url_for('jobs') }}" class="btn btn-sm btn-primary">Ver Todos los Trabajos</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if failed_jobs %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Archivo</th>
+                                    <th>Impresora</th>
+                                    <th>Error</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in failed_jobs %}
+                                <tr>
+                                    <td>{{ job.id }}</td>
+                                    <td>{{ job.filename }}</td>
+                                    <td>{{ job.printer_name }}</td>
+                                    <td>
+                                        <span class="text-danger">{{ job.error_message or 'Error desconocido' }}</span>
+                                    </td>
+                                    <td>{{ job.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" onclick="retryJob({{ job.id }})">
+                                            Reintentar
+                                        </button>
+                                        <button class="btn btn-sm btn-info" onclick="viewJobDetails({{ job.id }})">
+                                            Detalles
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <h5 class="text-success">¡Excelente!</h5>
+                        <p class="text-muted">No hay trabajos fallidos. Todos los trabajos se han completado exitosamente.</p>
+                        <a href="{{ url_for('jobs') }}" class="btn btn-primary">Ver Todos los Trabajos</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas de Errores -->
+    {% if failed_jobs %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Análisis de Errores</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Errores más comunes:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-exclamation-triangle text-warning"></i> Archivo no encontrado</li>
+                                <li><i class="fas fa-exclamation-triangle text-warning"></i> Impresora no disponible</li>
+                                <li><i class="fas fa-exclamation-triangle text-warning"></i> Error de permisos</li>
+                                <li><i class="fas fa-exclamation-triangle text-warning"></i> Formato de archivo no soportado</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Soluciones recomendadas:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success"></i> Verificar que el archivo existe</li>
+                                <li><i class="fas fa-check text-success"></i> Comprobar que la impresora esté conectada</li>
+                                <li><i class="fas fa-check text-success"></i> Usar formatos soportados (PDF, DOC, TXT)</li>
+                                <li><i class="fas fa-check text-success"></i> Revisar permisos de Windows</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para detalles del trabajo -->
+<div class="modal fade" id="jobDetailsModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalles del Trabajo</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="jobDetailsContent">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-warning" id="retryJobBtn">Reintentar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function retryJob(jobId) {
+    if (confirm('¿Reintentar este trabajo?')) {
+        fetch(`/api/retry/${jobId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Trabajo enviado para reintento');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al reintentar trabajo');
+        });
+    }
+}
+
+function retryAllFailed() {
+    if (confirm('¿Reintentar todos los trabajos fallidos?')) {
+        const failedJobs = document.querySelectorAll('button[onclick*="retryJob"]');
+        let retriedCount = 0;
+        
+        failedJobs.forEach(button => {
+            const jobId = button.getAttribute('onclick').match(/\d+/)[0];
+            fetch(`/api/retry/${jobId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    retriedCount++;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+        
+        setTimeout(() => {
+            alert(`Se enviaron ${retriedCount} trabajos para reintento`);
+            location.reload();
+        }, 1000);
+    }
+}
+
+function viewJobDetails(jobId) {
+    fetch(`/api/jobs/${jobId}`)
+        .then(response => response.json())
+        .then(data => {
+            const content = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Información del Trabajo</h6>
+                        <p><strong>ID:</strong> ${data.id}</p>
+                        <p><strong>Archivo:</strong> ${data.filename}</p>
+                        <p><strong>Impresora:</strong> ${data.printer_name}</p>
+                        <p><strong>Copias:</strong> ${data.copies}</p>
+                        <p><strong>Estado:</strong> <span class="badge badge-danger">${data.status}</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Fechas</h6>
+                        <p><strong>Creado:</strong> ${new Date(data.created_at).toLocaleString()}</p>
+                        <p><strong>Completado:</strong> ${data.completed_at ? new Date(data.completed_at).toLocaleString() : 'No completado'}</p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Mensaje de Error</h6>
+                        <div class="alert alert-danger">
+                            ${data.error_message || 'Error desconocido'}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('jobDetailsContent').innerHTML = content;
+            document.getElementById('retryJobBtn').onclick = () => retryJob(jobId);
+            $('#jobDetailsModal').modal('show');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al obtener detalles del trabajo');
+        });
+}
+</script>
+{% endblock %} 

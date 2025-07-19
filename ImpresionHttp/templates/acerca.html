@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Acerca de - Mi Aplicación Flask{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="text-center mb-4">
+            <h1 class="display-4 text-primary">
+                <i class="fas fa-info-circle me-3"></i>Acerca de
+            </h1>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-rocket me-2"></i>Mi Aplicación Flask
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="lead">
+                    Esta es una aplicación web simple creada con <strong>Flask</strong> para gestionar tareas.
+                </p>
+                
+                <h5 class="mt-4">Características:</h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <i class="fas fa-plus text-success me-2"></i>
+                        Agregar nuevas tareas
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-check text-primary me-2"></i>
+                        Marcar tareas como completadas
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-trash text-danger me-2"></i>
+                        Eliminar tareas
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-chart-bar text-info me-2"></i>
+                        Ver estadísticas de tareas
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-code me-2"></i>Tecnologías Utilizadas
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li><i class="fab fa-python text-primary me-2"></i>Python 3.x</li>
+                            <li><i class="fas fa-flask text-warning me-2"></i>Flask Framework</li>
+                            <li><i class="fab fa-html5 text-danger me-2"></i>HTML5</li>
+                            <li><i class="fab fa-css3-alt text-info me-2"></i>CSS3</li>
+                            <li><i class="fab fa-bootstrap text-primary me-2"></i>Bootstrap 5</li>
+                            <li><i class="fab fa-js text-warning me-2"></i>JavaScript</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-lightbulb me-2"></i>Funcionalidades
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-server text-success me-2"></i>Servidor web local</li>
+                            <li><i class="fas fa-database text-primary me-2"></i>Almacenamiento en memoria</li>
+                            <li><i class="fas fa-mobile-alt text-info me-2"></i>Diseño responsivo</li>
+                            <li><i class="fas fa-bell text-warning me-2"></i>Mensajes flash</li>
+                            <li><i class="fas fa-shield-alt text-success me-2"></i>Validación de formularios</li>
+                            <li><i class="fas fa-chart-line text-danger me-2"></i>Estadísticas en tiempo real</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">
+                    <i class="fas fa-graduation-cap me-2"></i>¿Por qué Flask?
+                </h6>
+            </div>
+            <div class="card-body">
+                <p>
+                    Flask es un microframework web ligero y flexible para Python. Es perfecto para:
+                </p>
+                <ul>
+                    <li>Aplicaciones web simples y rápidas</li>
+                    <li>Prototipado rápido</li>
+                    <li>Aprendizaje de desarrollo web</li>
+                    <li>APIs RESTful</li>
+                    <li>Proyectos pequeños y medianos</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
